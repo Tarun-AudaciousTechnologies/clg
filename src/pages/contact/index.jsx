@@ -1,8 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { BsTelephone } from "react-icons/bs";
 import { FiMail } from "react-icons/fi";
 import { ImMap2 } from "react-icons/im";
+import { Formik, Form, Field } from "formik";
 import styles from "./styles.module.css";
+import { AdminDetailSchema } from "../../components/validation";
+import { useContactUs } from "../../hooks/Auth";
+import { toast } from "react-toastify";
+import Toastify from "../../components/Toastify";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -15,11 +20,30 @@ import {
   FormGroup,
   Input,
   Row,
-  Form,
 } from "reactstrap";
 import Divider from "../../components/divider";
 
 const Contact = () => {
+  const [isLoading, setisLoading] = useState(false);
+  const { mutateAsync: contactUsMutation } = useContactUs();
+
+  const updateAdminDetails = async (values) => {
+    setisLoading(true)
+    try {
+      const { data } = await contactUsMutation({
+        firstName: values.firstName,
+        lastName: values.lastName,
+        email: values.email,
+        phone: values.phone,
+        message: values.message,
+      });
+      toast.success(data.message)
+      setisLoading(false)
+    } catch (error) {
+      console.log(error);
+      setisLoading(false)
+    }
+  };
   return (
     <>
       <Card className={styles.contactusHead} body>
@@ -110,74 +134,123 @@ const Contact = () => {
             Send Messages
           </CardTitle>
           <Divider />
-          <Form>
-            <Row>
-              <Col md={6}>
-                <FormGroup>
-                  <Input
-                    type="text"
-                    name="firstName"
-                    id="firstName"
-                    placeholder="First Name"
-                    className={` rounded-pill  ${styles.form_input}`}
-                  />
+          <Formik
+            initialValues={{
+              firstName: "",
+              lastName: "",
+              email: "",
+              phone: "",
+              message: "",
+            }}
+            validationSchema={AdminDetailSchema}
+            onSubmit={updateAdminDetails}
+            enableReinitialize
+          >
+            {(props) => (
+              <Form>
+                <Row>
+                  <Col md={6}>
+                    <FormGroup>
+                      <Input
+                        type="text"
+                        name="firstName"
+                        id="firstName"
+                        placeholder="First Name"
+                        className={` rounded-pill  ${styles.form_input}`}
+                        onChange={props.handleChange}
+                      />
+                      {props.errors.firstName ? (
+                        <div className="text-danger">
+                          {props.errors.firstName}
+                        </div>
+                      ) : null}
+                    </FormGroup>
+                  </Col>
+                  <Col md={6}>
+                    <FormGroup>
+                      <Input
+                        type="text"
+                        name="lastName"
+                        id="lasstName"
+                        placeholder="Last Name"
+                        className={` rounded-pill  ${styles.form_input}`}
+                        onChange={props.handleChange}
+                      />
+                      {props.errors.lastName ? (
+                        <div className="text-danger">
+                          {props.errors.lastName}
+                        </div>
+                      ) : null}
+                    </FormGroup>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col md={6}>
+                    <FormGroup>
+                      <Input
+                        type="email"
+                        name="email"
+                        id="email"
+                        placeholder="Email"
+                        className={` rounded-pill  ${styles.form_input}`}
+                        onChange={props.handleChange}
+                      />
+                      {props.errors.email ? (
+                        <div className="text-danger">{props.errors.email}</div>
+                      ) : null}
+                    </FormGroup>
+                  </Col>
+                  <Col md={6}>
+                    <FormGroup>
+                      <Input
+                        type="tel"
+                        name="phone"
+                        id="phone"
+                        placeholder="Phone No"
+                        className={` rounded-pill  ${styles.form_input}`}
+                        onChange={props.handleChange}
+                      />
+                      {props.errors.phone ? (
+                        <div className="text-danger">{props.errors.phone}</div>
+                      ) : null}
+                    </FormGroup>
+                  </Col>
+                </Row>
+                <FormGroup row>
+                  <Col sm={12}>
+                    <Input
+                      id="message"
+                      name="message"
+                      placeholder="Message"
+                      className={` rounded-pill  ${styles.Card_input_field}`}
+                      onChange={props.handleChange}
+                    />
+                    {props.errors.message ? (
+                      <div className="text-danger">{props.errors.message}</div>
+                    ) : null}
+                  </Col>
                 </FormGroup>
-              </Col>
-              <Col md={6}>
-                <FormGroup>
-                  <Input
-                    type="text"
-                    name="lastName"
-                    id="lasstName"
-                    placeholder="Last Name"
-                    className={` rounded-pill  ${styles.form_input}`}
-                  />
-                </FormGroup>
-              </Col>
-            </Row>
-            <Row>
-              <Col md={6}>
-                <FormGroup>
-                  <Input
-                    type="email"
-                    name="email"
-                    id="email"
-                    placeholder="Email"
-                    className={` rounded-pill  ${styles.form_input}`}
-                  />
-                </FormGroup>
-              </Col>
-              <Col md={6}>
-                <FormGroup>
-                  <Input
-                    type="tel"
-                    name="phone"
-                    id="phone"
-                    placeholder="Phone No"
-                    className={` rounded-pill  ${styles.form_input}`}
-                  />
-                </FormGroup>
-              </Col>
-            </Row>
-            <FormGroup row>
-              <Col sm={12}>
-                <Input
-                  id="message"
-                  name="message"
-                  placeholder="Message"
-                  className={` rounded-pill  ${styles.Card_input_field}`}
-                />
-              </Col>
-            </FormGroup>
-            <Button
-              type="submit"
-              className={`rounded-pill px-5 my-5 ${styles.submitbtn}`}
-            >
-              Submit Message
-            </Button>
-          </Form>
+                {isLoading ? (
+                  <Button
+                    disabled
+                    className={`rounded-pill px-5 my-5 ${styles.submitbtn}`}
+                  >
+                    Loading...
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    className={`rounded-pill px-5 my-5 ${styles.submitbtn}`}
+                  >
+                    Submit Message
+                  </Button>
+                )}
+              </Form>
+            )}
+          </Formik>
         </Container>
       </Container>
+      <Toastify/>
     </>
   );
 };
